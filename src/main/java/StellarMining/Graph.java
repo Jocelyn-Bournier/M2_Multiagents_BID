@@ -66,8 +66,10 @@ public class Graph {
     }
     
     public void addEdge(Coords c1, Coords c2){
-        this.edges.add(new Edge(c1, c2));
-        this.edges.add(new Edge(c2, c1));
+        if(!c1.equals(c2)){
+            this.edges.add(new Edge(c1, c2));
+            this.edges.add(new Edge(c2, c1));
+        }
     }
 
     public HashSet<Coords> getNeighbours(Coords n) {
