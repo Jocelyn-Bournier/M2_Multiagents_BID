@@ -22,7 +22,12 @@ public class Coords {
     public int getX() { return this.x; }
     public int getY() { return this.y; }
 
-    public boolean equals(Coords coords) {
-        return (this.x == coords.getX() && this.y == coords.getY());
+    @Override
+    public boolean equals(Object c) {
+        return this.x == ((Coords)c).getX() && this.y == ((Coords)c).getY();
+    }
+
+    public String toString() {
+        return "(" + this.x + "," + this.y + ")";
     }
 }

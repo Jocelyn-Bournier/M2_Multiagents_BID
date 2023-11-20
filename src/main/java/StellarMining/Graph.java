@@ -1,6 +1,7 @@
 package StellarMining;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 /**
  * This class represents a graph of nodes and edges.
@@ -25,42 +26,54 @@ class Edge {
     public Coords getTo() {
         return to;
     }
+
+    @Override
+    public String toString() {
+        return "Edge [from=" + from + ", to=" + to + "]";
+    }
+    
+    @Override
+    public boolean equals(Object e){
+        return this.from.equals(((Edge)e).getFrom()) && this.to.equals(((Edge)e).getTo());
+    }
 }
 
 public class Graph {
     //graphe constitué dune liste de noeud et d'arrêtes
 
-    private ArrayList<Coords> nodes;
-    private ArrayList<Edge> edges;
+    private HashSet<Coords> nodes;
+    private HashSet<Edge> edges;
     private int nbCoordss;
     
     public Graph(){
         this.nbCoordss = 0;
-        this.nodes = new ArrayList<Coords>();
-        this.edges = new ArrayList<Edge>();
+        this.nodes = new HashSet<Coords>();
+        this.edges = new HashSet<Edge>();
+    }
+
+    public HashSet<Coords> getNodes() {
+        return nodes;
+    }
+
+    public HashSet<Edge> getEdges() {
+        return edges;
     }
 
     public void addCoords(Coords c){
-        //chek if coords id already in nodes
-        if (this.nodes.contains(c)){
-            return;
+        if (this.nodes.add(c)){
+            this.nbCoordss++;
         }
-        this.nodes.add(c);
-        this.nbCoordss++;
     }
     
     public void addEdge(Coords c1, Coords c2){
-        if(this.edges.contains(new Edge(c1, c2))){
-            return;
-        }
         this.edges.add(new Edge(c1, c2));
         this.edges.add(new Edge(c2, c1));
     }
 
-    public ArrayList<Coords> getNeighbours(Coords n) {
-        ArrayList<Coords> neighbours = new ArrayList<Coords>();
+    public HashSet<Coords> getNeighbours(Coords n) {
+        HashSet<Coords> neighbours = new HashSet<Coords>();
         for (Edge e : this.edges){
-            if (e.getFrom() == n){
+            if (e.getFrom().equals(n)){
                 neighbours.add(e.getTo());
             }
         }
@@ -82,6 +95,7 @@ public class Graph {
         ArrayList<Coords> unvisited = new ArrayList<Coords>();
         ArrayList<Coords> visited = new ArrayList<Coords>();
         ArrayList<Coords> path = new ArrayList<Coords>();
+        ArrayList<Coords> nodes = new ArrayList<Coords>(this.nodes);
         int[] dist = new int[this.nbCoordss];
         int[] prev = new int[this.nbCoordss];
         int i = 0;
@@ -91,11 +105,11 @@ public class Graph {
             prev[i] = -1;
             i++;
         }
-        dist[this.nodes.indexOf(start)] = 0;
+        dist[nodes.indexOf(start)] = 0;
         while(!unvisited.isEmpty()){
             Coords u = unvisited.get(0);
             for (Coords n : unvisited){
-                if (dist[this.nodes.indexOf(n)] < dist[this.nodes.indexOf(u)]){
+                if (dist[nodes.indexOf(n)] < dist[nodes.indexOf(u)]){
                     u = n;
                 }
             }
@@ -103,18 +117,18 @@ public class Graph {
             visited.add(u);
             for (Coords v : this.getNeighbours(u)){
                 if (!visited.contains(v)){
-                    int alt = dist[this.nodes.indexOf(u)] + 1;
-                    if (alt < dist[this.nodes.indexOf(v)]){
-                        dist[this.nodes.indexOf(v)] = alt;
-                        prev[this.nodes.indexOf(v)] = this.nodes.indexOf(u);
+                    int alt = dist[nodes.indexOf(u)] + 1;
+                    if (alt < dist[nodes.indexOf(v)]){
+                        dist[nodes.indexOf(v)] = alt;
+                        prev[nodes.indexOf(v)] = nodes.indexOf(u);
                     }
                 }
             }
         }
         Coords u = end;
-        while (prev[this.nodes.indexOf(u)] != -1){
+        while (prev[nodes.indexOf(u)] != -1){
             path.add(u);
-            u = this.nodes.get(prev[this.nodes.indexOf(u)]);
+            u = nodes.get(prev[nodes.indexOf(u)]);
         }
         return path;
     }

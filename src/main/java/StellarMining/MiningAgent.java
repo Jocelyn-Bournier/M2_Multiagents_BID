@@ -2,8 +2,8 @@ package StellarMining;
 import java.util.ArrayList;
 import jade.core.*;
 import jade.core.behaviours.Behaviour;
-import jade.core.behaviours.TickerBehaviour;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.core.behaviours.TickerBehaviour;
 
 public class MiningAgent extends Agent {
     Coords prevPosAgent;
@@ -31,21 +31,20 @@ public class MiningAgent extends Agent {
         System.out.println("Hello! My name is " + name);
         System.out.println("My position is : (x:" + posAgent.getX() + ", y:" + posAgent.getY() + ")");
         System.out.println("My bag is empty : " + bag + "/" + bagSize);
-        System.out.println("My fuel : " + fuel + "%");
+        System.out.println("My fuel : " + fuel);
         
-        addBehaviour(new CyclicBehaviour() { 
+        TickerBehaviour actions_cycle = new TickerBehaviour(this, 500) { 
 
-            public void action() {
-                System.out.println("I'm wandering");
+            protected void onTick() {
+                System.out.println("Starting a cycle");
                 addBehaviour(new Wandering());
-                System.out.println("I'm going back to base");
                 addBehaviour(new GoToBase());
-                System.out.println("I'm back to base");
                 addBehaviour(new refuelAndEmptyBag());
-                System.out.println("I refueled and emptied my bag");
             }
             
-        });
+        };
+
+        addBehaviour(actions_cycle);
     }
 
     private void moveToCoords(Coords coords, int cost) {
@@ -96,40 +95,29 @@ public class MiningAgent extends Agent {
         envGraph.addEdge(prevPosAgent, posAgent);
     }
 
-    private class GoToBase extends Behaviour {
-        public void action() {
-            System.out.println("Going back to base");
-            System.out.println("Fuel : " + fuel + "%");
-            //find path to base
-            //move to base with appropriate cost
-            envGraph.shortestPathCost(posAgent,posBase);
-        }
-
-        public boolean done() {
-            System.out.println("Done going back to base");
-            return posAgent.equals(posBase);
-        }
-    }
-
     private class Wandering extends Behaviour {
         public void action() {
             //random walk, need to check if the action is possible before doing it
             ArrayList<Integer> actions = checkActionPossible();
             int rd_ind_direction = (int) (Math.random() * actions.size());
             moveToDirection(actions.get(rd_ind_direction));
-            
-            System.out.println("Wandering");
-            System.out.println("Fuel : " + fuel + "%");
+            System.out.println("Wandering to : (x:" + posAgent.getX() + ", y:" + posAgent.getY() + ")");
             //if position contains ore, mine it
             if (env.checkOres(posAgent) > 0) {
                 System.out.println("Found ore");
                 addBehaviour(new Mine());
             }
         }
-
-		public boolean done() {
+        
+        public boolean done() {
             //si la quantité de fuel est suffisante pour rentrer + 2*moveCost pour avoir une hysteresis
-            System.out.println("Wandered to : (x:" + posAgent.getX() + ", y:" + posAgent.getY() + ")");
+            System.out.println("Wandered, Fuel : " + fuel);
+            System.out.println(envGraph.getNeighbours(posAgent));
+            System.out.println(envGraph.getNeighbours(posBase));
+            //print edges
+            for (Edge e : envGraph.getEdges()) {
+                System.out.println(e);
+            }
             return fuel <= ((envGraph.shortestPathCost(posAgent, posBase) * moveCost) + moveCost*2) || bag >= bagSize;
         }
     }
@@ -137,7 +125,7 @@ public class MiningAgent extends Agent {
     private class Mine extends Behaviour {
         public void action() {
             System.out.println("Mining");
-            System.out.println("Fuel : " + fuel + "%");
+            System.out.println("Fuel : " + fuel);
             env.mineOres(posAgent, 1);
             fuel -= mineCost;
         }
@@ -147,15 +135,31 @@ public class MiningAgent extends Agent {
             return env.checkOres(posAgent) == 0 || fuel <= ((envGraph.shortestPathCost(posAgent, posBase) * moveCost) + moveCost*2) || bag >= bagSize;
         }
     }
+    
+    private class GoToBase extends Behaviour {
+        public void action() {
+            System.out.println("Going back to base");
+            System.out.println("Fuel : " + fuel);
+            //find path to base
+            //move to base with appropriate cost
+            envGraph.shortestPathCost(posAgent,posBase);
+        }
+
+        public boolean done() {
+            System.out.println("Gone back to base");
+            System.out.println("Fuel : " + fuel);
+            return posAgent.equals(posBase);
+        }
+    }
 
     private class refuelAndEmptyBag extends Behaviour {
         public void action() {
             fuel = 100;
             bag = 0;
-            System.out.println("Refueled and emptied bag");
         }
-
+        
         public boolean done() {
+            System.out.println("Refueled and emptied bag");
             return true;
         }
     }
