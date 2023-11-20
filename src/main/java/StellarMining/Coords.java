@@ -4,8 +4,6 @@ public class Coords {
     private int x;
     private int y;
 
-    private int borne = 10;
-
     public Coords(int x, int y) {
         this.x = x;
         this.y = y;
@@ -17,12 +15,8 @@ public class Coords {
     }
 
     public void updateCoords(int x, int y) {
-        if(x >= 0 && x < this.borne){
-            this.x = x;
-        }
-        if(y >= 0 && y < this.borne){
-            this.y = y;
-        }
+        this.x = x;
+        this.y = y;
     }
 
     public int getX() { return this.x; }
