@@ -10,7 +10,7 @@ import jade.lang.acl.ACLMessage;
 
 
 public class MiningAgent extends Agent {
-    String name;
+    AID name;
     Coords prevPosAgent;
     Coords posAgent;
     Coords posBase;
@@ -34,17 +34,16 @@ public class MiningAgent extends Agent {
         posBase = new Coords(env.getPosBase());
         prevPosAgent = new Coords(posBase);
         posAgent = new Coords(posBase);
-        name = getAID().getName();
+        name = getAID();
         envGraph = new Graph();
         envGraph.addCoords(posBase);
-        System.out.println("Hello! My name is " + name);
         System.out.println("My position is : (x:" + posAgent.getX() + ", y:" + posAgent.getY() + ")");
         System.out.println("My bag is empty : " + bag + "/" + bagSize);
         System.out.println("My fuel : " + fuel);
 
         addBehaviour(new ReceiveMessage());
         
-        TickerBehaviour actions_cycle = new TickerBehaviour(this, 2000) { 
+        TickerBehaviour actions_cycle = new TickerBehaviour(this, 1000) { 
             protected void onTick() {
                 System.out.println("Starting a cycle");
                 SequentialBehaviour seq = new SequentialBehaviour();
@@ -152,6 +151,14 @@ public class MiningAgent extends Agent {
                     int y = Integer.parseInt(parts[2].substring(3,4));
                     posOtherAgent = new Coords(x, y);
                     System.out.println("Other agent moved to : (x:" + posOtherAgent.getX() + ", y:" + posOtherAgent.getY() + ")");
+                } else {
+                    if (content.contains("mine")) {
+                        String[] parts = content.split(" ");
+                        int x = Integer.parseInt(parts[1].substring(1, 2));
+                        int y = Integer.parseInt(parts[1].substring(3,4));
+                        Coords oreAvailable = new Coords(x, y);
+                        System.out.println("Other agent mined : (x:" + oreAvailable.getX() + ", y:" + oreAvailable.getY() + ")");
+                    }
                 }
             } else {
                 // Si aucun message n'a été reçu, bloquer le comportement
@@ -202,7 +209,19 @@ public class MiningAgent extends Agent {
 
         public boolean done() {
             System.out.println("Done mining");
-            return env.checkOres(posAgent) == 0 || fuel <= ((envGraph.shortestPathCost(posAgent, posBase) * moveCost) + hysteresis) || bag >= bagSize;
+            boolean done = env.checkOres(posAgent) == 0 || fuel <= ((envGraph.shortestPathCost(posAgent, posBase) * moveCost) + hysteresis) || bag >= bagSize;
+            //if done and there is still ore, send msg to other agent to mine it
+            if (done && env.checkOres(posAgent) > 0) {
+                ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+                msg.setContent("mine " + posAgent);
+                for (AID aid : env.getRobotsAID()) {
+                    if(!aid.equals(name)){
+                        msg.addReceiver(aid);
+                    }
+                }
+                send(msg);
+            }
+            return done;
         }
     }
     

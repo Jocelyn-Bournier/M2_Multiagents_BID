@@ -48,12 +48,14 @@ public class Env {
     }
 
     public void generateOres() {
+        int minMinerais = 20;
+        int maxMinerais = 40;
         this.ores = new Ores[this.nbOres];
         for (int i = 0; i < this.nbOres; i++) {
             int x = (int) (Math.random() * (this.bornes.getY() + 1));
             int y = (int) (Math.random() * (this.bornes.getY() + 1));
             //taille tas comprise entre 2 et 4
-            int taille_tas = (int) (Math.random() * (4 - 2) + 2);
+            int taille_tas = (int) (Math.random() * (maxMinerais - minMinerais) + 2);
             //pour pas que 2 tas soient sur la même case
             boolean is_available = false;
             while(!is_available || (x == 0 && y == 0)){
