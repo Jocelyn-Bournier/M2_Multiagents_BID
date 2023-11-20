@@ -1,13 +1,13 @@
 package StellarMining;
 import java.util.ArrayList;
+
 import jade.core.*;
 import jade.core.behaviours.Behaviour;
+import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.TickerBehaviour;
-import jade.domain.AMSService;
-import jade.domain.FIPAAgentManagement.AMSAgentDescription;
-import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.core.behaviours.SequentialBehaviour;
 import jade.lang.acl.ACLMessage;
+
 
 public class MiningAgent extends Agent {
     String name;
@@ -26,10 +26,11 @@ public class MiningAgent extends Agent {
     Graph envGraph;
     ArrayList<Coords> path;
 
-    public void setup() {
+	public void setup() {
         bag = 0;
         fuel = 100;
-        env = new Env();
+        env = Env.getInstance();
+        env.addRobot(this.getAID());
         posBase = new Coords(env.getPosBase());
         prevPosAgent = new Coords(posBase);
         posAgent = new Coords(posBase);
@@ -40,6 +41,8 @@ public class MiningAgent extends Agent {
         System.out.println("My position is : (x:" + posAgent.getX() + ", y:" + posAgent.getY() + ")");
         System.out.println("My bag is empty : " + bag + "/" + bagSize);
         System.out.println("My fuel : " + fuel);
+
+        addBehaviour(new ReceiveMessage());
         
         TickerBehaviour actions_cycle = new TickerBehaviour(this, 2000) { 
             protected void onTick() {
@@ -122,28 +125,39 @@ public class MiningAgent extends Agent {
         prevPosAgent = new Coords(posAgent);
         posAgent = new Coords(dest);
         moveToCoords(dest, moveCost);
-        /*
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setContent("move to " + posAgent);
-        AMSAgentDescription [] agents = null;
-      	try {
-            SearchConstraints c = new SearchConstraints();
-            c.setMaxResults(Long.MAX_VALUE);
-			agents = AMSService.search( this, new AMSAgentDescription (), c );
-		}
-		catch (Exception e) {
-            System.out.println( "Problem searching AMS: " + e );
-            e.printStackTrace();
-		}
-        for (int i=0; i<agents.length;i++) {
-            AID agentID = agents[i].getName();
-            if (agentID.getLocalName().equals(name)) {
-                msg.addReceiver(agentID);
+        for (AID aid : env.getRobotsAID()) {
+            if(!aid.equals(this.getAID())){
+                msg.addReceiver(aid);
             }
         }
-        */
+        send(msg);
         envGraph.addCoords(posAgent);
         envGraph.addEdge(prevPosAgent, posAgent);
+    }
+
+    private class ReceiveMessage extends CyclicBehaviour {
+        public void action() {
+            // Attendre la réception d'un message
+            ACLMessage msg = receive();
+
+            // Vérifier si un message a été reçu
+            if (msg != null) {
+                String content = msg.getContent();
+                
+                if (content.contains("move to")) {
+                    String[] parts = content.split(" ");
+                    int x = Integer.parseInt(parts[2].substring(1, 2));
+                    int y = Integer.parseInt(parts[2].substring(3,4));
+                    posOtherAgent = new Coords(x, y);
+                    System.out.println("Other agent moved to : (x:" + posOtherAgent.getX() + ", y:" + posOtherAgent.getY() + ")");
+                }
+            } else {
+                // Si aucun message n'a été reçu, bloquer le comportement
+                block();
+            }
+        }
     }
 
     private class Wandering extends Behaviour {

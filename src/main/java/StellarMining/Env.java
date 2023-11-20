@@ -1,15 +1,31 @@
 package StellarMining;
 
+import jade.core.AID;
+import java.util.List;
+import java.util.ArrayList;
+
 public class Env {
     private Coords bornes;
     private Coords posBase;
     private int nbOres;
     private Ores[] ores;
+    private List<AID> robotsAID;
+    
+    public void addRobot(AID aid) {
+        if (!robotsAID.contains(aid)) {
+            robotsAID.add(aid);
+        }
+    }
+    
+    public List<AID> getRobotsAID() {
+        return robotsAID;
+    }
 
     public Env(Coords bornes, Coords posBase, int nbOres) {
         this.bornes = bornes;
         this.nbOres = nbOres;
         this.posBase = posBase;
+        this.robotsAID = new ArrayList<>();
         generateOres();
     }
 
@@ -18,7 +34,17 @@ public class Env {
         this.bornes = new Coords(0,9);
         this.posBase = new Coords(0,0);
         this.nbOres = 10;
+        this.robotsAID = new ArrayList<>();
         generateOres();
+    }
+
+    public static Env instance = null;
+    
+    public synchronized static Env getInstance () {
+        if (instance == null) {
+            instance = new Env();
+        }
+        return instance;
     }
 
     public void generateOres() {
